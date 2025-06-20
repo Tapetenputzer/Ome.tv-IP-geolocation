@@ -27,7 +27,7 @@
         try {
             // Konfiguration
             const CONFIG = {
-                apiKey: "2f1708b3bb82a3", // Ersetze mit deinem ipinfo.io API-Key
+                apiKey: "DEIN API KEY HIER REIN", // Ersetze mit deinem ipinfo.io API-Key
                 refreshInterval: 3000, // Längeres Intervall um Last zu reduzieren
                 cacheTime: 300000 // 5 Minuten Cache
             };
