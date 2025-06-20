@@ -1,22 +1,20 @@
 // ==UserScript==
-// @name         made by taptenputzer (v1.1)
+// @name         made by taptenputzer (v1.2)
 // @namespace    https://github.com/Tapetenputzer/Ome.tv-IP-geolocation
-// @version      1.1
-// @description  Ome.tv IP Geolocation by taptenputzer – srflx only, Panel + Chat-Ausgabe, 24/7 Refresh jede Sekunde
+// @version      1.2
+// @description  Ome.tv IP Geolocation – srflx only, Panel-Ausgabe, kein Chat-Spam
 // @author       taptenputzer
 // @match        https://ome.tv/
 // @icon         https://www.google.com/s2/favicons?domain=ome.tv
 // @license      MIT License
 // @grant        none
-// @run-at       document-start
+// @run-at       document-end
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    //
-    // 1) CSS für persistentes Ausgabe-Panel
-    //
+    // 1) Panel-Styling
     const style = document.createElement('style');
     style.textContent = `
     #tap-geo-panel {
@@ -59,48 +57,13 @@
     `;
     document.documentElement.appendChild(style);
 
-    //
     // 2) Panel erzeugen
-    //
     const panel = document.createElement('div');
     panel.id = 'tap-geo-panel';
     panel.innerHTML = '<h4>IP-Geolocation</h4>';
-    document.addEventListener('DOMContentLoaded', () => {
-        document.body.appendChild(panel);
-    });
+    document.body.appendChild(panel);
 
-    //
-    // 3) Chat-Ausgabe-Funktion
-    //
-    async function addMessage(msg) {
-        const container = document.querySelector('.message-bubble');
-        if (!container) return;
-        const putData = container.firstChild;
-        const div = document.createElement('div');
-        div.className = 'logitem';
-        const p = document.createElement('p');
-        p.className = 'statuslog';
-        p.innerText = msg;
-        div.appendChild(p);
-        putData.appendChild(div);
-    }
-
-    //
-    // 4) Automatisches Neuladen blocken
-    //
-    try {
-        window.location.reload = () => console.log('[taptenputzer] reload blocked');
-        window.location.assign = () => console.log('[taptenputzer] assign blocked');
-        Object.defineProperty(window.location, 'href', {
-            set: v => console.log('[taptenputzer] href change blocked to', v)
-        });
-    } catch (e) {
-        console.warn('[taptenputzer] konnte reload nicht überschreiben:', e);
-    }
-
-    //
-    // 5) WebRTC–Hook via Prototype-Patch (nur srflx-Kandidaten)
-    //
+    // 3) WebRTC–Hook
     const OriginalPC = window.RTCPeerConnection || window.webkitRTCPeerConnection;
     let lastIp = null;
     let currentIp = null;
@@ -129,15 +92,10 @@
         OriginalPC.prototype.addIceCandidate.toString = () => 'function addIceCandidate() { [native code] }';
     }
 
-    //
-    // 6) API-Key und Region-Namen
-    //
-    const apiKey = "072a896dc04088";
+    // 4) Geolocation via API (nur Panel)
+    const apiKey = "2f1708b3bb82a3"; // Ersetze mit deinem funktionierenden Key
     const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 
-    //
-    // 7) Panel-Update
-    //
     function addPanelEntry(dataObj) {
         panel.innerHTML = '<h4>IP-Geolocation</h4>';
         const table = document.createElement('table');
@@ -154,9 +112,6 @@
         panel.appendChild(table);
     }
 
-    //
-    // 8) IP-Geolocation holen & ausgeben
-    //
     async function getLocation(ip) {
         try {
             const res  = await fetch(`https://ipinfo.io/${ip}?token=${apiKey}`);
@@ -168,32 +123,18 @@
                 "City":     json.city,
                 "Lat/Long": json.loc
             };
-            // Panel
             addPanelEntry(data);
-            // Chat
-            const msg = `
-IP       : ${data.IP}
-Country  : ${data.Country}
-State    : ${data.State}
-City     : ${data.City}
-Lat/Long : ${data["Lat/Long"]}
-`.trim();
-            addMessage(msg);
         } catch (e) {
             console.error('[taptenputzer] Geolocation error:', e);
         }
     }
 
-    //
-    // 9) 24/7-Refresh (jede 1 Sekunde)
-    //
+    // 5) Panel-Refresh
     setInterval(() => {
         if (currentIp) getLocation(currentIp);
     }, 1000);
 
-    //
-    // 10) Neustart-Button ausblenden
-    //
+    // 6) Neustart-Knopf ausblenden
     function hideRestartButtons() {
         ['button','a','div','span'].forEach(tag => {
             document.querySelectorAll(tag).forEach(el => {
